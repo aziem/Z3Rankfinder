@@ -64,20 +64,23 @@ let solve ctx query =
   | Z3.L_FALSE -> None
   | _ -> assert false
 
-
-
 let synthesis ctx r =
-  let coefs = Bigarray.Array2.of_array Bigarray.int Bigarray.c_layout r in
-  let a,b = (Bigarray.Array2.dim1 coefs, Bigarray.Array2.dim2 coefs) in
+  let coefs = Matrix.of_array r in
+  let r,c = (Matrix.row_dim coefs, Matrix.col_dim coefs) in
+  let b = Matrix.sub_left coefs 0 (r-1) (c-1) (c-1) in
+  let a = Matrix.sub_left coefs 0 (r-1) 0 ((c-2)/2) in
+  let a' = Matrix.sub_left coefs 0 (r-1) (((c-2)/2)+1) (c-2) in
+  let b_symb = Matrix.map (make_const ctx) b in
+  let a_symb = Matrix.map (make_const ctx) a in
+  let a_symb' = Matrix.map (make_const ctx) a' in
+
+  let lambda1 = Array.init r (fun i -> fresh_var ctx ()) in
+  let lambda2 = Array.init r (fun i -> fresh_var ctx ()) in
 
   ()
 
-
 let ctx = Z3.mk_context []
 let slv = Z3.mk_solver ctx
-
-
-
 
 let _ =
   Printf.printf "Hello\n"
