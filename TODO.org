@@ -1,0 +1,13 @@
+
+* Z3Rankfinder
+
+** DONE Matrix Module
+
+
+** TODO Linear expressions
+*** TODO Parser
+*** TODO Normalization
+
+** TODO Rank synthesis
+
+** TODO Documentation
