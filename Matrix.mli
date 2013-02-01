@@ -3,10 +3,10 @@ exception Not_a_matrix
 exception Not_same_dimension
 exception Empty_matrix
 exception Wrong_dimension
-external to_array : 'a matrix -> 'a array array = "%identity"
 module Matrix :
   sig
     val of_array : 'a array array -> 'a matrix
+    val to_array : 'a matrix -> 'a array array
     val copy : 'a array array -> 'a array array
     val col_dim : 'a matrix -> int
     val row_dim : 'a matrix -> int
@@ -15,6 +15,11 @@ module Matrix :
     val unsafe_get : 'a matrix -> int -> int -> 'a
     val create : int -> int -> 'a -> 'a matrix
     val init : int -> int -> (int -> int -> 'a) -> 'a matrix
+    val multiply : 'a matrix -> 'a matrix -> ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a matrix
+    val add : 'a matrix -> 'a matrix -> ('a -> 'a -> 'a) -> 'a -> 'a matrix
+    val vminus : 'a array -> 'a array -> ('a -> 'a -> 'a) -> 'a array
+    val mvmul : 'a matrix -> 'a array -> ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a -> 'a array
+
     val sub_left : 'a matrix -> int -> int -> int -> int -> 'a matrix
     val iter : ('a -> 'b) -> 'a matrix -> unit
     val iterij : (int -> int -> 'a -> 'b) -> 'a matrix -> unit

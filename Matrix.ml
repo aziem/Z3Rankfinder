@@ -7,7 +7,6 @@ exception Not_same_dimension
 exception Empty_matrix
 exception Wrong_dimension
 
-external to_array : 'a matrix -> 'a array array = "%identity"
 
 module Matrix = struct
   let of_array = function
@@ -19,6 +18,8 @@ module Matrix = struct
 	if row_dim <> (Array.length m.(i)) then raise Not_a_matrix
       done;
       m
+
+  let to_array a = a
 
   let copy a =
     Array.map (Array.copy) a
@@ -39,26 +40,83 @@ module Matrix = struct
     Array.unsafe_get (Array.unsafe_get m i) j
 
   let create col_dim row_dim x =
-    let res = Array.create col_dim [||] in
-    for i=0 to col_dim - 1 do
-      Array.unsafe_set res i (Array.create row_dim x)
+    let res = Array.create row_dim [||] in
+    for i=0 to row_dim - 1 do
+      Array.unsafe_set res i (Array.create col_dim x)
     done;
     res
 
   let init col_dim row_dim f =
-    let res = Array.create col_dim [||] in
-    for i=0 to col_dim - 1 do
-      Array.unsafe_set res i (Array.create row_dim (f i 0));
-      for j=1 to row_dim - 1 do
+    let res = Array.create row_dim [||] in
+    for i=0 to row_dim - 1 do
+      Array.unsafe_set res i (Array.create col_dim (f i 0));
+      for j=1 to col_dim - 1 do
 	Array.unsafe_set (Array.unsafe_get res i) j (f i j)
       done;
     done;
     res
+  let transpose m =
+    init (col_dim m) (row_dim m) (fun i j -> unsafe_get m j i)
+
+
+  let multiply x y mul_op plus_op =
+    let x0 = Array.length x in
+    let y0 = Array.length y in
+    let y1 = if y0=0 then 0 else Array.length y.(0) in
+    let z = create x0 y0 x.(0).(0) in
+    for i = 0 to x0-1 do
+      for j = 0 to y1-1 do
+        for k = 0 to y0-1 do
+          z.(i).(j) <- plus_op z.(i).(j) (mul_op  x.(i).(k) y.(k).(j))
+        done
+      done
+    done;
+    z
+
+
+  let add m1 m2 plus_op init =
+    Array.mapi (fun i r -> (Array.mapi (fun j c -> plus_op m1.(i).(j) m2.(i).(j)) r) ) m1
+
+
+  let vminus v1 v2 sub_op =
+    Array.mapi (fun i x -> sub_op x v2.(i)) v1
+
+
+  let vdot v1 v2 mul_op plus_op init =
+    Printf.printf "VDOT";
+    Array.fold_left plus_op init (Array.mapi (fun i x -> Printf.printf "I:%d\n" i; mul_op x v2.(i)) v1)
+
+  let mvmul m v mul_op plus_op init =
+    let col = Array.length m.(0) in
+    let r = Array.length v in
+    let c = Array.make col init in
+    for j = 0 to col-1 do
+      for i = 0 to r-1 do
+        c.(j) <- plus_op c.(j) (mul_op m.(i).(j) v.(i))
+      done;
+    done;
+    c
 
   let sub_left m row1 row2 col1 col2 =
-    match m with
+  (*  match m with
     | [|[||]|] -> [|[||]|]
-    | _ -> init (row2 - row1) (col2 - col1) (fun i j -> get m i j)
+    | _ -> init (row2 - row1 +1 ) (col2 - col1 +1) (fun i j -> get m i j) *)
+    (*let m1 = create (col2 - col1 + 1) (row2 - row1 +1) m.(0).(0) in
+    let r = row_dim m1 in
+    let c = col_dim m1 in
+    Printf.printf "R: %d C: %d\n" r c;
+    for i=0 to r-1 do
+      for j=0 to c-1 do
+        Printf.printf "NEWR: %d NEWC: %d OLDR: %d OLDC:%d\n" i j (i+row1) (j+col1);
+        flush stdout;
+(*        m1.(i).(j) <- m.(i+row1).(j+col1); *)
+        unsafe_set m1 i j m.(i+row1).(j+col1);
+      done;
+    done;
+    m1*)
+    (init (col2 - col1 + 1) (row2 - row1 + 1) (fun i j -> get m (i+row1) (j+col1)))
+
+
 
   let iter f m =
     let row_dim = Array.length m.(0) in
@@ -192,9 +250,6 @@ module Matrix = struct
       m.(i).(i) <- 1.
     done;
     m
-
-  let transpose m =
-    init (col_dim m) (row_dim m) (fun i j -> unsafe_get m j i)
 
   let random_int col_dim row_dim range =
     Random.self_init ();
