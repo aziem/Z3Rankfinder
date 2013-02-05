@@ -3,37 +3,53 @@ exception Not_a_matrix
 exception Not_same_dimension
 exception Empty_matrix
 exception Wrong_dimension
-module Matrix :
-  sig
-    val of_array : 'a array array -> 'a matrix
-    val to_array : 'a matrix -> 'a array array
-    val copy : 'a array array -> 'a array array
-    val col_dim : 'a matrix -> int
-    val row_dim : 'a matrix -> int
-    val unsafe_set : 'a matrix -> int -> int -> 'a -> unit
-    val get : 'a matrix -> int -> int -> 'a
-    val unsafe_get : 'a matrix -> int -> int -> 'a
-    val create : int -> int -> 'a -> 'a matrix
-    val init : int -> int -> (int -> int -> 'a) -> 'a matrix
-    val multiply : 'a matrix -> 'a matrix -> ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a matrix
-    val add : 'a matrix -> 'a matrix -> ('a -> 'a -> 'a) -> 'a -> 'a matrix
-    val vminus : 'a array -> 'a array -> ('a -> 'a -> 'a) -> 'a array
-    val mvmul : 'a matrix -> 'a array -> ('a -> 'a -> 'a) -> ('a -> 'a -> 'a) -> 'a -> 'a array
 
-    val sub_left : 'a matrix -> int -> int -> int -> int -> 'a matrix
-    val iter : ('a -> 'b) -> 'a matrix -> unit
-    val iterij : (int -> int -> 'a -> 'b) -> 'a matrix -> unit
-    val map : ('a -> 'b) -> 'a matrix -> 'b matrix
-    val mapij : (int -> int -> 'a -> 'b) -> 'a matrix -> 'b matrix
-    val modif : ('a -> 'a) -> 'a matrix -> unit
-    val modifij : (int -> int -> 'a -> 'a) -> 'a matrix -> unit
+
+module type MATRIX_TYPE =
+  sig
+    type t
+    val plus : t -> t -> t
+    val sub : t -> t -> t
+    val mult : t -> t -> t
+    val init : t
+  end
+
+module type Matrix =
+  sig
+    type t
+    val id : t -> t
+    val of_array : t array array -> t matrix
+    val to_array : t matrix -> t array array
+    val copy : t array array -> t array array
+    val col_dim : t matrix -> int
+    val row_dim : t matrix -> int
+    val unsafe_set : t matrix -> int -> int -> t -> unit
+    val get : t matrix -> int -> int -> t
+    val unsafe_get : t matrix -> int -> int -> t
+    val create : int -> int -> t -> t matrix
+    val init : int -> int -> (int -> int -> t) -> t matrix
+    val multiply : t matrix -> t matrix -> t matrix
+    val scalar_multiply : t -> t matrix -> t matrix
+    val add : t matrix -> t matrix -> t matrix
+    val vminus : t array -> t array -> t array
+    val mvmul : t matrix -> t array -> t array
+
+    val sub_left : t matrix -> int -> int -> int -> int -> t matrix
+    val iter : (t -> t) -> t matrix -> unit
+    val iterij : (int -> int -> t -> t) -> t matrix -> unit
+    val map : (t -> 'a) -> t matrix -> 'a matrix
+    val mapij : (int -> int -> t -> t) -> t matrix -> t matrix
+    val modif : (t -> t) -> t matrix -> unit
+    val modifij : (int -> int -> t -> t) -> t matrix -> unit
     val map2 :
-      ('a -> 'b -> 'c) -> 'a matrix -> 'b matrix -> 'c matrix
-    val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b matrix -> 'a
-    val fold_right : ('a -> 'b -> 'b) -> 'a matrix -> 'b -> 'b
+      (t -> t -> 'c) -> t matrix -> t matrix -> 'c matrix
+    val fold_left : (t -> t -> t) -> t -> t matrix -> t
+    val fold_right : (t -> t -> t) -> t matrix -> t -> t
     val identity : int -> float matrix
-    val transpose : 'a matrix -> 'a matrix
+    val transpose : t matrix -> t matrix
     val random_int : int -> int -> int -> int matrix
     val print_int : int matrix -> unit
     val println_int : int matrix -> unit
   end
+
+module Make (MatType : MATRIX_TYPE) : Matrix with type t = MatType.t
