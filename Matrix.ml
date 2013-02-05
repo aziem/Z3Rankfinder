@@ -8,7 +8,18 @@ exception Empty_matrix
 exception Wrong_dimension
 
 
-module Matrix = struct
+module type MATRIX_TYPE =
+  sig
+    type t
+    val plus : t -> t -> t
+    val sub : t -> t -> t
+    val mult : t -> t -> t
+    val init : t
+  end
+
+
+module Matrix (M : MATRIX_TYPE) =
+  struct
   let of_array = function
     | [|[||]|] -> [|[||]|]
     | m ->
@@ -59,40 +70,49 @@ module Matrix = struct
     init (col_dim m) (row_dim m) (fun i j -> unsafe_get m j i)
 
 
-  let multiply x y mul_op plus_op =
+  let multiply x y  =
     let x0 = Array.length x in
     let y0 = Array.length y in
     let y1 = if y0=0 then 0 else Array.length y.(0) in
-    let z = create x0 y0 x.(0).(0) in
+    let z = create x0 y0 M.init in
     for i = 0 to x0-1 do
       for j = 0 to y1-1 do
         for k = 0 to y0-1 do
-          z.(i).(j) <- plus_op z.(i).(j) (mul_op  x.(i).(k) y.(k).(j))
+          z.(i).(j) <- M.plus z.(i).(j) (M.mult  x.(i).(k) y.(k).(j))
         done
       done
     done;
     z
 
+  let scalar_multiply i m =
+    let r = Array.length x in
+    let c = Array.length x.(0) in
+    let z = create r c M.init in
+    for i = 0 to r do
+      for j = 0 to c do
+        z.(i).(j) <- M.mult i x.(i).(j);
+      done;
+    done;
+    z
 
-  let add m1 m2 plus_op init =
-    Array.mapi (fun i r -> (Array.mapi (fun j c -> plus_op m1.(i).(j) m2.(i).(j)) r) ) m1
+
+  let add m1 m2  =
+    Array.mapi (fun i r -> (Array.mapi (fun j c -> M.plus m1.(i).(j) m2.(i).(j)) r) ) m1
+
+  let vminus v1 v2 =
+    Array.mapi (fun i x -> M.sub x v2.(i)) v1
 
 
-  let vminus v1 v2 sub_op =
-    Array.mapi (fun i x -> sub_op x v2.(i)) v1
+  let vdot v1 v2 =
+    Array.fold_left M.plus M.init (Array.mapi (fun i x -> M.mult x v2.(i)) v1)
 
-
-  let vdot v1 v2 mul_op plus_op init =
-    Printf.printf "VDOT";
-    Array.fold_left plus_op init (Array.mapi (fun i x -> Printf.printf "I:%d\n" i; mul_op x v2.(i)) v1)
-
-  let mvmul m v mul_op plus_op init =
+  let mvmul m v =
     let col = Array.length m.(0) in
     let r = Array.length v in
-    let c = Array.make col init in
+    let c = Array.make col M.init in
     for j = 0 to col-1 do
       for i = 0 to r-1 do
-        c.(j) <- plus_op c.(j) (mul_op m.(i).(j) v.(i))
+        c.(j) <- M.plus c.(j) (M.mult m.(i).(j) v.(i))
       done;
     done;
     c
